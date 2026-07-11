@@ -1,0 +1,6 @@
+{
+  "name": "The GenZ's Thrift",
+  "description": "An interactive, vibe-aligned local apparel store for Tees, Caps, Jeans, and GenZ clothing with seamless filtering, dark mode, 3D hover effects, and an AI-powered styling recommendation engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

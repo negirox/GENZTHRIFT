@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Outfit", "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* High contrast brutalist dark colors */
+  --color-stone-50: #121212;
+  --color-stone-100: #050505;
+  --color-stone-150: #1a1a1a;
+  --color-stone-200: #262626;
+  --color-stone-300: #404040;
+  --color-stone-400: #737373;
+  --color-stone-500: #a3a3a3;
+  --color-stone-600: #d4d4d4;
+  --color-stone-700: #e5e5e5;
+  --color-stone-800: #1a1a1a;
+  --color-stone-850: #121212;
+  --color-stone-900: #050505;
+
+  /* Redefine emerald & lime references to the glorious neon Volt yellow/green (#CCFF00) */
+  --color-emerald-800: #CCFF00;
+  --color-emerald-700: #b2dd00;
+  --color-emerald-950: #182200;
+  --color-lime-300: #e5ff80;
+  --color-lime-400: #CCFF00;
+  --color-lime-950: #182200;
+
+  /* Volt direct declarations */
+  --color-volt: #CCFF00;
+  --color-volt-hover: #b2dd00;
+}
+
+@layer base {
+  body {
+    @apply bg-[#050505] text-white antialiased selection:bg-[#CCFF00] selection:text-black;
+  }
+}
+
+/* Custom Keyframe animations for buttery smooth entrances */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Brutalist details */
+.brutalist-border {
+  border: 2px solid #262626;
+}
+
+.brutalist-border-volt {
+  border: 2px solid #CCFF00;
+}
+
+.brutalist-card {
+  background-color: #121212;
+  border: 2px solid #262626;
+  transition: all 0.2s ease-in-out;
+}
+
+.brutalist-card:hover {
+  border-color: #CCFF00;
+  transform: translateY(-4px);
+}
+
