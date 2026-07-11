@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Heart, Star, Sparkles, AlertTriangle, ShieldCheck, Shirt, Check } from 'lucide-react';
 import { Product, BrowsingHistoryItem } from '../types';
+import { getLocalSingleSuggestion } from '../lib/clientStylist';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -54,24 +55,48 @@ export default function ProductDetailModal({
     setLoadingSuggestion(true);
     setSuggestionError('');
     try {
-      const response = await fetch('/api/ai/styling-suggestion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          product,
-          historyProducts,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Styling suggestion server returned an error');
+      let response;
+      try {
+        response = await fetch('/api/ai/styling-suggestion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            product,
+            historyProducts,
+          }),
+        });
+      } catch (fetchErr) {
+        console.warn('API endpoint unavailable (possibly hosted on static site like Netlify). Activating local client-side styling fallback.', fetchErr);
+        const fallbackData = getLocalSingleSuggestion(product, historyProducts);
+        setSuggestionText(fallbackData.suggestion);
+        setSuggestionVibe(fallbackData.vibeName);
+        return;
       }
 
-      const data = await response.json();
-      setSuggestionText(data.suggestion || '');
-      setSuggestionVibe(data.vibeName || '');
+      if (!response.ok) {
+        console.warn(`API responded with code ${response.status}. Activating local client-side styling fallback.`);
+        const fallbackData = getLocalSingleSuggestion(product, historyProducts);
+        setSuggestionText(fallbackData.suggestion);
+        setSuggestionVibe(fallbackData.vibeName);
+        return;
+      }
+
+      try {
+        const data = await response.json();
+        if (data && data.suggestion) {
+          setSuggestionText(data.suggestion);
+          setSuggestionVibe(data.vibeName || '');
+        } else {
+          throw new Error('Invalid data schema from API');
+        }
+      } catch (jsonErr) {
+        console.warn('Failed to parse API JSON. Activating local client-side styling fallback.', jsonErr);
+        const fallbackData = getLocalSingleSuggestion(product, historyProducts);
+        setSuggestionText(fallbackData.suggestion);
+        setSuggestionVibe(fallbackData.vibeName);
+      }
     } catch (err: any) {
       console.error(err);
       setSuggestionError('No cap, our styling brain got a little cooked. Reload to check the vibes!');

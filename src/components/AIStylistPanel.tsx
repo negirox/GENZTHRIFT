@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, RefreshCw, Flame, HelpCircle, Heart, Star, Compass } from 'lucide-react';
 import { Product, BrowsingHistoryItem, AIStylingResponse } from '../types';
+import { getLocalStylingAdvice } from '../lib/clientStylist';
 
 interface AIStylistPanelProps {
   products: Product[];
@@ -70,22 +71,43 @@ export default function AIStylistPanel({
         tags: p.tags,
       }));
 
-      const response = await fetch('/api/ai/stylist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          history: simplifiedHistory,
-          catalog: catalogInfo,
-          topCategory,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Our stylist is temporarily out of service. Try again, low-key!');
+      let response;
+      try {
+        response = await fetch('/api/ai/stylist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            history: simplifiedHistory,
+            catalog: catalogInfo,
+            topCategory,
+          }),
+        });
+      } catch (fetchErr) {
+        console.warn('API endpoint unavailable (possibly hosted on static site like Netlify). Activating local client-side stylist fallback.', fetchErr);
+        const fallbackData = getLocalStylingAdvice(simplifiedHistory, catalogInfo, topCategory);
+        setStylingResult(fallbackData);
+        return;
       }
 
-      const data = await response.json();
-      setStylingResult(data);
+      if (!response.ok) {
+        console.warn(`API responded with code ${response.status}. Activating local client-side stylist fallback.`);
+        const fallbackData = getLocalStylingAdvice(simplifiedHistory, catalogInfo, topCategory);
+        setStylingResult(fallbackData);
+        return;
+      }
+
+      try {
+        const data = await response.json();
+        if (data && data.advice) {
+          setStylingResult(data);
+        } else {
+          throw new Error('Invalid data schema from API');
+        }
+      } catch (jsonErr) {
+        console.warn('Failed to parse API JSON. Activating local client-side stylist fallback.', jsonErr);
+        const fallbackData = getLocalStylingAdvice(simplifiedHistory, catalogInfo, topCategory);
+        setStylingResult(fallbackData);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Something went wrong');

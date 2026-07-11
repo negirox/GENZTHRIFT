@@ -19,6 +19,9 @@ import ManageProductsModal from './components/ManageProductsModal';
 import AIStylistPanel from './components/AIStylistPanel';
 import PersonalizedPanel from './components/PersonalizedPanel';
 import PhotoShuffleHub from './components/PhotoShuffleHub';
+import ComplianceModal from './components/ComplianceModal';
+import AdSenseBanner from './components/AdSenseBanner';
+import { Shield, FileText, Info, Mail, AlertTriangle } from 'lucide-react';
 
 export default function App() {
   // Theme state (Dark Mode by default to give a high-fashion, premium GenZ vibe)
@@ -44,6 +47,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'browse' | 'recommendations'>('browse');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+
+  // AdSense & Compliance states
+  const [showAdSensePreview, setShowAdSensePreview] = useState<boolean>(true);
+  const [complianceModalTab, setComplianceModalTab] = useState<'privacy' | 'terms' | 'about' | 'contact' | 'disclaimer'>('privacy');
+  const [isComplianceOpen, setIsComplianceOpen] = useState<boolean>(false);
 
   // Initialize theme
   useEffect(() => {
@@ -287,6 +295,17 @@ export default function App() {
               {/* Rich visual 3D-parallax banner mimicking image */}
               <Banner />
 
+              {/* High Performance Responsive AdSense Leaderboard Slot */}
+              {showAdSensePreview && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <AdSenseBanner 
+                    slotId="8472935810" 
+                    format="horizontal" 
+                    isPreviewMode={showAdSensePreview} 
+                  />
+                </div>
+              )}
+
               {/* Browse Catalog & Filter Layout */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -381,7 +400,42 @@ export default function App() {
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2"
                 >
                   <AnimatePresence mode="popLayout">
-                    {sortedProducts.map((prod) => (
+                    {sortedProducts.slice(0, 4).map((prod) => (
+                      <motion.div
+                        key={prod.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                        className="h-full"
+                      >
+                        <ProductCard
+                          product={prod}
+                          onSelect={handleSelectProduct}
+                          onToggleFavorite={handleToggleFavorite}
+                        />
+                      </motion.div>
+                    ))}
+
+                    {/* Inline Product Feed Google AdSense Banner after the 4th item (or at the end if fewer) */}
+                    {showAdSensePreview && sortedProducts.length > 0 && (
+                      <motion.div
+                        key="adsense-inline-feed"
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="col-span-1 sm:col-span-2 lg:col-span-4 h-full"
+                      >
+                        <AdSenseBanner 
+                          slotId="4829301822" 
+                          format="horizontal" 
+                          isPreviewMode={showAdSensePreview} 
+                        />
+                      </motion.div>
+                    )}
+
+                    {sortedProducts.slice(4).map((prod) => (
                       <motion.div
                         key={prod.id}
                         layout
@@ -499,11 +553,77 @@ export default function App() {
             onResetToDefault={handleResetToDefault}
           />
         )}
+
+        {isComplianceOpen && (
+          <ComplianceModal
+            isOpen={isComplianceOpen}
+            onClose={() => setIsComplianceOpen(false)}
+            initialTab={complianceModalTab}
+          />
+        )}
       </AnimatePresence>
 
-      {/* Footer */}
-      <footer className="border-t border-stone-200 dark:border-stone-850 py-8 text-center text-[11px] font-mono text-stone-400 dark:text-stone-500">
-        <p>© 2026 THE GENZ'S THRIFT • Lucknow Gole Market Sector-D. Sustainability is sexy, no cap.</p>
+      {/* Footer & Compliance Hub */}
+      <footer className="border-t border-stone-200 dark:border-stone-850 bg-stone-950/40 py-10 text-center font-mono text-stone-400 dark:text-stone-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          
+          {/* AdSense Switch Controller & Visual Feed Indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
+            <span className="text-stone-500 font-bold uppercase tracking-wider text-[10px]">ADSENSE CONSOLE:</span>
+            <button
+              onClick={() => setShowAdSensePreview(!showAdSensePreview)}
+              className={`px-3 py-1.5 border font-bold text-[10px] uppercase tracking-wider transition-all duration-200 flex items-center space-x-1.5 ${
+                showAdSensePreview 
+                  ? 'bg-[#CCFF00] text-black border-[#CCFF00]' 
+                  : 'bg-transparent border-stone-800 text-stone-400 hover:text-white hover:border-stone-700'
+              }`}
+            >
+              <span>{showAdSensePreview ? '● AdSense Simulation Active' : '○ AdSense Simulation Disabled'}</span>
+            </button>
+            <span className="text-[10px] text-stone-600">|</span>
+            <span className="text-[10px] text-stone-500">Auto-Ads Slot: #8472935810 (Responsive)</span>
+          </div>
+
+          {/* Compliance Legal Links */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+            <button
+              onClick={() => { setComplianceModalTab('about'); setIsComplianceOpen(true); }}
+              className="hover:underline transition-all"
+            >
+              About Us
+            </button>
+            <button
+              onClick={() => { setComplianceModalTab('privacy'); setIsComplianceOpen(true); }}
+              className="hover:underline transition-all"
+            >
+              Privacy Policy
+            </button>
+            <button
+              onClick={() => { setComplianceModalTab('terms'); setIsComplianceOpen(true); }}
+              className="hover:underline transition-all"
+            >
+              Terms of Service
+            </button>
+            <button
+              onClick={() => { setComplianceModalTab('disclaimer'); setIsComplianceOpen(true); }}
+              className="hover:underline transition-all"
+            >
+              Liability Disclaimer
+            </button>
+            <button
+              onClick={() => { setComplianceModalTab('contact'); setIsComplianceOpen(true); }}
+              className="hover:underline transition-all"
+            >
+              Contact Support
+            </button>
+          </div>
+
+          {/* Copyright Info */}
+          <div className="space-y-1.5 border-t border-stone-900 pt-6 text-[10px] text-stone-500">
+            <p>© 2026 THE GENZ'S THRIFT • Lucknow Gole Market Sector-D. Sustainability is sexy, no cap.</p>
+            <p className="text-[9px] text-stone-600">Optimized for Google Search index crawlers & AdSense network integration standards.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
