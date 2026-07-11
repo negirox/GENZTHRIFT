@@ -22,15 +22,27 @@ export default function AdSenseBanner({
 }: AdSenseBannerProps) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const insRef = React.useRef<HTMLModElement>(null);
 
   // Initialize real Google AdSense pushing on mount (safely ignored if blocker active or scripts not fully parsed)
   React.useEffect(() => {
-    try {
-      // @ts-ignore
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
-      // Quietly log or ignore during local development
-    }
+    const timer = setTimeout(() => {
+      try {
+        if (insRef.current) {
+          // Only push if the AdSense script has loaded and this ins element hasn't been initialized yet
+          const alreadyProcessed = insRef.current.hasAttribute('data-adsbygoogle-status');
+          // @ts-ignore
+          const adsbygoogle = window.adsbygoogle;
+          if (!alreadyProcessed && adsbygoogle && typeof adsbygoogle.push === 'function') {
+            adsbygoogle.push({});
+          }
+        }
+      } catch (e) {
+        console.warn('AdSense push notification safe warning:', e);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const getFormatDimensions = () => {
@@ -48,7 +60,7 @@ export default function AdSenseBanner({
 
   const codeSnippet = `<ins class="adsbygoogle"
      style="display:block"
-     data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+     data-ad-client="ca-pub-9187440931404634"
      data-ad-slot="${slotId}"
      data-ad-format="${format}"
      data-full-width-responsive="true"></ins>
@@ -63,14 +75,15 @@ export default function AdSenseBanner({
   };
 
   return (
-    <div className={`my-4 relative z-10 select-none ${className}`}>
+    <div className={`my-4 relative z-10 select-none ${!isPreviewMode ? getFormatDimensions() : ''} ${className}`}>
       
-      {/* Real AdSense Element (invisible in local preview if no real script client configured) */}
-      <div className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
+      {/* Real AdSense Element (takes full parent layout space so availableWidth remains > 0) */}
+      <div className={isPreviewMode ? "absolute inset-0 opacity-0 pointer-events-none overflow-hidden" : "w-full h-full"}>
         <ins
+          ref={insRef}
           className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" // Placeholder to be replaced
+          style={{ display: 'block', width: '100%', height: '100%' }}
+          data-ad-client="ca-pub-9187440931404634" // User's verified active publisher ID
           data-ad-slot={slotId}
           data-ad-format={format}
           data-full-width-responsive="true"
