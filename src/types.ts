@@ -43,3 +43,19 @@ export interface AIStylingResponse {
   matchedSlang: string;
   suggestedOutfitIds: string[];
 }
+
+export interface SavedOutfit {
+  id: string;
+  name: string;
+  vibe: string;
+  slang: string;
+  description: string;
+  capId?: string;
+  teeId?: string;
+  jeansId?: string;
+  accId?: string;
+  discountPercent: number;
+  synergyIndex: number;
+  price: number;
+  createdAt: number;
+}

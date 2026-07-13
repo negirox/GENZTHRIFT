@@ -26,6 +26,7 @@ export default function ProductFilter({
     { value: 'cap', label: 'Caps & Hats' },
     { value: 'jeans', label: 'Denim & Jeans' },
     { value: 'accessories', label: 'Accessories' },
+    { value: 'other', label: 'Gym & Others' },
   ];
 
   const sizes = ['all', 'S', 'M', 'L', 'XL', 'One Size', 'Adjustable', '28', '30', '32', '34'];

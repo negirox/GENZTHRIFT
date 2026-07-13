@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ShoppingBag, PlusCircle, LayoutGrid, Heart, Eye } from 'lucide-react';
-import { Product, BrowsingHistoryItem, FilterState } from './types';
+import { Product, BrowsingHistoryItem, FilterState, SavedOutfit } from './types';
 import { DEFAULT_PRODUCTS } from './data/defaultProducts';
 
 // Components
@@ -21,6 +21,7 @@ import PersonalizedPanel from './components/PersonalizedPanel';
 import PhotoShuffleHub from './components/PhotoShuffleHub';
 import ComplianceModal from './components/ComplianceModal';
 import AdSenseBanner from './components/AdSenseBanner';
+import OutfitBuilder from './components/OutfitBuilder';
 import { Shield, FileText, Info, Mail, AlertTriangle } from 'lucide-react';
 
 export default function App() {
@@ -33,6 +34,12 @@ export default function App() {
   // Browsing history log state (backed by localStorage)
   const [history, setHistory] = useState<BrowsingHistoryItem[]>([]);
 
+  // Saved Outfits list state (backed by localStorage)
+  const [savedOutfits, setSavedOutfits] = useState<SavedOutfit[]>([]);
+
+  // Track outfit to deep link/load into the OutfitBuilder workshop
+  const [loadedOutfit, setLoadedOutfit] = useState<SavedOutfit | null>(null);
+
   // Filtering state
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -44,7 +51,7 @@ export default function App() {
   });
 
   // UI state
-  const [activeTab, setActiveTab] = useState<'browse' | 'recommendations'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'recommendations' | 'outfits'>('browse');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
@@ -79,21 +86,35 @@ export default function App() {
     if (storedProducts) {
       try {
         const loaded: Product[] = JSON.parse(storedProducts);
-        // Migrate default items to the new pricing and discount structure
-        const upgraded = loaded.map((p) => {
-          const defaultMatch = DEFAULT_PRODUCTS.find((dp) => dp.id === p.id);
-          if (defaultMatch) {
-            return {
-              ...p,
-              price: defaultMatch.price,
-              originalPrice: defaultMatch.originalPrice,
-              category: defaultMatch.category,
-            };
-          }
-          return p;
-        });
-        setProducts(upgraded);
-        localStorage.setItem('gz-thrift-products', JSON.stringify(upgraded));
+        
+        // Detect if there are legacy default items in storage
+        const hasLegacy = loaded.some((p) => 
+          ['tee-01', 'tee-02', 'cap-01', 'cap-02', 'jeans-01', 'jeans-02', 'acc-01', 'acc-02'].includes(p.id)
+        );
+
+        if (hasLegacy || loaded.length < 13) {
+          // Force reset to the new 13 premium items with the requested exact prices
+          setProducts(DEFAULT_PRODUCTS);
+          localStorage.setItem('gz-thrift-products', JSON.stringify(DEFAULT_PRODUCTS));
+        } else {
+          // Migrate default items to the new pricing and discount structure
+          const upgraded = loaded.map((p) => {
+            const defaultMatch = DEFAULT_PRODUCTS.find((dp) => dp.id === p.id);
+            if (defaultMatch) {
+              return {
+                ...p,
+                price: defaultMatch.price,
+                originalPrice: defaultMatch.originalPrice,
+                category: defaultMatch.category,
+                title: defaultMatch.title,
+                description: defaultMatch.description,
+              };
+            }
+            return p;
+          });
+          setProducts(upgraded);
+          localStorage.setItem('gz-thrift-products', JSON.stringify(upgraded));
+        }
       } catch (e) {
         setProducts(DEFAULT_PRODUCTS);
       }
@@ -107,6 +128,15 @@ export default function App() {
         setHistory(JSON.parse(storedHistory));
       } catch (e) {
         setHistory([]);
+      }
+    }
+
+    const storedOutfits = localStorage.getItem('gz-thrift-saved-outfits');
+    if (storedOutfits) {
+      try {
+        setSavedOutfits(JSON.parse(storedOutfits));
+      } catch (e) {
+        setSavedOutfits([]);
       }
     }
   }, []);
@@ -132,6 +162,41 @@ export default function App() {
       return p;
     });
     saveProducts(updated);
+  };
+
+  // Save outfit combinations
+  const saveSavedOutfits = (newOutfits: SavedOutfit[]) => {
+    setSavedOutfits(newOutfits);
+    localStorage.setItem('gz-thrift-saved-outfits', JSON.stringify(newOutfits));
+  };
+
+  // Toggle favorite status of an outfit combination (preset or custom)
+  const handleToggleSavedOutfit = (outfit: Omit<SavedOutfit, 'createdAt' | 'id'> & { id?: string }) => {
+    // Look up by item composition (cap, tee, jeans, accessories) to determine uniqueness
+    const exists = savedOutfits.find((o) => {
+      return o.capId === (outfit.capId || '') &&
+             o.teeId === (outfit.teeId || '') &&
+             o.jeansId === (outfit.jeansId || '') &&
+             o.accId === (outfit.accId || '');
+    });
+
+    if (exists) {
+      const updated = savedOutfits.filter((o) => o.id !== exists.id);
+      saveSavedOutfits(updated);
+    } else {
+      const newOutfit: SavedOutfit = {
+        ...outfit,
+        id: outfit.id || `outfit-${Date.now()}`,
+        createdAt: Date.now(),
+      };
+      saveSavedOutfits([newOutfit, ...savedOutfits]);
+    }
+  };
+
+  // Load a saved outfit into the Outfit Lab
+  const handleLoadSavedOutfit = (outfit: SavedOutfit) => {
+    setLoadedOutfit(outfit);
+    setActiveTab('outfits');
   };
 
   // Track product views for personalized recommendation scoring
@@ -482,6 +547,23 @@ export default function App() {
                 )}
               </div>
             </motion.div>
+          ) : activeTab === 'outfits' ? (
+            <motion.div
+              key="outfits-tab"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <OutfitBuilder
+                products={products}
+                onSelectProduct={handleSelectProduct}
+                savedOutfits={savedOutfits}
+                onToggleSavedOutfit={handleToggleSavedOutfit}
+                loadedOutfit={loadedOutfit}
+                onClearLoadedOutfit={() => setLoadedOutfit(null)}
+              />
+            </motion.div>
           ) : (
             <motion.div
               key="match-tab"
@@ -512,6 +594,8 @@ export default function App() {
               <PersonalizedPanel
                 products={products}
                 history={history}
+                savedOutfits={savedOutfits}
+                onToggleSavedOutfit={handleToggleSavedOutfit}
                 onSelectProduct={handleSelectProduct}
                 onToggleFavorite={handleToggleFavorite}
                 triggerAIStylist={() => {
@@ -522,6 +606,7 @@ export default function App() {
                     el.click();
                   }
                 }}
+                onLoadOutfit={handleLoadSavedOutfit}
               />
             </motion.div>
           )}

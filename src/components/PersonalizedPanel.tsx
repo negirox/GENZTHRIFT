@@ -6,22 +6,28 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Eye, Heart, BarChart2, Sparkles, ShoppingBag } from 'lucide-react';
-import { Product, BrowsingHistoryItem } from '../types';
+import { Product, BrowsingHistoryItem, SavedOutfit } from '../types';
 
 interface PersonalizedPanelProps {
   products: Product[];
   history: BrowsingHistoryItem[];
+  savedOutfits: SavedOutfit[];
+  onToggleSavedOutfit: (outfit: Omit<SavedOutfit, 'createdAt' | 'id'> & { id?: string }) => void;
   onSelectProduct: (product: Product) => void;
   onToggleFavorite: (id: string, event: React.MouseEvent) => void;
   triggerAIStylist: () => void;
+  onLoadOutfit: (outfit: SavedOutfit) => void;
 }
 
 export default function PersonalizedPanel({
   products,
   history,
+  savedOutfits,
+  onToggleSavedOutfit,
   onSelectProduct,
   onToggleFavorite,
   triggerAIStylist,
+  onLoadOutfit,
 }: PersonalizedPanelProps) {
   // 1. Get recently viewed items
   const recentlyViewed = history
@@ -249,6 +255,109 @@ export default function PersonalizedPanel({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Saved Outfits Section */}
+      <div className="space-y-4 pt-6 border-t-2 border-stone-800">
+        <h3 className="font-serif text-xl font-black text-white flex items-center space-x-2 uppercase tracking-tight">
+          <Sparkles className="w-5 h-5 text-[#CCFF00]" />
+          <span>Saved Outfits</span>
+        </h3>
+
+        {savedOutfits.length === 0 ? (
+          <div className="py-12 text-center text-xs text-stone-500 border-2 border-dashed border-stone-800 rounded-none bg-stone-900/50 font-mono uppercase">
+            No saved outfit combinations yet. Go to the Outfit Lab to assemble and favorite your favorite looks!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {savedOutfits.map((outfit) => {
+              // Retrieve products for this outfit
+              const cap = products.find((p) => p.id === outfit.capId);
+              const tee = products.find((p) => p.id === outfit.teeId);
+              const jeans = products.find((p) => p.id === outfit.jeansId);
+              const acc = products.find((p) => p.id === outfit.accId);
+              const outfitItems = [cap, tee, jeans, acc].filter((item): item is Product => !!item);
+
+              return (
+                <div
+                  key={outfit.id}
+                  className="bg-stone-900 border-2 border-stone-800 hover:border-[#CCFF00] p-5 transition-all duration-300 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[9px] font-mono font-bold text-[#CCFF00] bg-stone-950 px-2 py-0.5 uppercase tracking-wider">
+                          {outfit.slang}
+                        </span>
+                        <h4 className="font-serif text-lg font-black text-white uppercase tracking-tight mt-1.5">
+                          {outfit.name}
+                        </h4>
+                        <p className="text-[10px] text-stone-400 font-mono uppercase tracking-wider">
+                          {outfit.vibe}
+                        </p>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <span className="text-xs font-mono font-bold text-lime-400 bg-stone-950 px-2 py-1 border border-stone-800">
+                          Synergy: {outfit.synergyIndex}%
+                        </span>
+                        {outfit.discountPercent > 0 && (
+                          <span className="text-[9px] text-stone-500 font-mono mt-1">
+                            -{outfit.discountPercent}% Bundle Off
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-stone-400 leading-relaxed">
+                      {outfit.description}
+                    </p>
+
+                    {/* Outfit Flat-Lay items preview */}
+                    <div className="flex items-center gap-2 pt-2">
+                      {outfitItems.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => onSelectProduct(item)}
+                          className="w-12 h-12 bg-stone-950 border border-stone-800 hover:border-[#CCFF00] cursor-pointer transition-colors p-0.5 relative group/item"
+                          title={item.title}
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 flex items-center justify-center transition-opacity">
+                            <span className="text-[6px] text-[#CCFF00] font-mono uppercase">View</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-800 flex items-center justify-between">
+                    <div className="font-mono text-base font-black text-[#CCFF00]">
+                      ₹{outfit.price.toLocaleString('en-IN')}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => onLoadOutfit(outfit)}
+                        className="px-3 py-1.5 bg-[#CCFF00] hover:bg-[#b2dd00] text-black font-mono text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        Style Fit 🧪
+                      </button>
+                      <button
+                        onClick={() => onToggleSavedOutfit(outfit)}
+                        className="px-3 py-1.5 border border-red-500 text-red-500 hover:bg-red-500/10 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

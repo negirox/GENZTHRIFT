@@ -4,14 +4,14 @@
  */
 
 import React from 'react';
-import { Sun, Moon, Phone, MapPin, Sparkles, Settings } from 'lucide-react';
+import { Sun, Moon, Phone, MapPin, Sparkles, Settings, Shirt } from 'lucide-react';
 
 interface HeaderProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   openManageModal: () => void;
-  activeTab: 'browse' | 'recommendations';
-  setActiveTab: (tab: 'browse' | 'recommendations') => void;
+  activeTab: 'browse' | 'recommendations' | 'outfits';
+  setActiveTab: (tab: 'browse' | 'recommendations' | 'outfits') => void;
 }
 
 export default function Header({
@@ -50,6 +50,18 @@ export default function Header({
                 }`}
               >
                 Browse Catalog
+              </button>
+              <button
+                id="tab-outfits"
+                onClick={() => setActiveTab('outfits')}
+                className={`px-4 py-2 border-2 text-[11px] font-black uppercase tracking-widest flex items-center space-x-1.5 transition-all duration-300 ${
+                  activeTab === 'outfits'
+                    ? 'bg-[#CCFF00] text-black border-[#CCFF00] hover:bg-[#CCFF00]/90 shadow-md'
+                    : 'text-stone-300 border-transparent hover:border-stone-700 hover:text-white'
+                }`}
+              >
+                <Shirt className="w-3.5 h-3.5" />
+                <span>Outfit Lab</span>
               </button>
               <button
                 id="tab-recommendations"
